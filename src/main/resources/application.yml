@@ -1,6 +1,8 @@
 spring:
   application:
     name: AICodeGen-Backend
+  profiles:
+    active: dev
 server:
   port: 8080
   servlet:
