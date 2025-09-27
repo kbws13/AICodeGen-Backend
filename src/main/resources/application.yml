@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: AICodeGen-Backend
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# springdoc-openapi
+springdoc:
+  group-configs:
+    - group: 'default'
+      packages-to-scan: xyz.kbws.aicodegenbackend.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
