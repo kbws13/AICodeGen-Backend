@@ -15,7 +15,7 @@ langchain4j:
       base-url: https://api.deepseek.com
       api-key: ${DEEKSEEK_API_KEY}
       model-name: deepseek-chat
-      max-tokens: 2048
+      max-tokens: 8192
       log-requests: true
       log-responses: true
       max-retries: 3
@@ -24,7 +24,7 @@ langchain4j:
       base-url: https://api.deepseek.com
       api-key: ${DEEKSEEK_API_KEY}
       model-name: deepseek-chat
-      max-tokens: 2048
+      max-tokens: 8192
       log-requests: true
       log-responses: true
     # 推理 AI 模型配置（用于复杂的推理任务）
