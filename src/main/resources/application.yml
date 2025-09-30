@@ -3,10 +3,16 @@ spring:
     name: AICodeGen-Backend
   profiles:
     active: dev
+  session:
+    store-type: redis
+    timeout: 259200
 server:
   port: 8080
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 259200
 
 # AI
 langchain4j:
