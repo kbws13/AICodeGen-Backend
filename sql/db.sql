@@ -54,10 +54,10 @@ create table if not exists chat_history
     messageType varchar(32)                        not null comment 'user/ai',
     appId       bigint                             not null comment '应用 id',
     userId      bigint                             not null comment '创建用户 id',
-    creatTime   datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    createTime   datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete    tinyint  default 0                 not null comment '是否删除',
     index idx_appId (appId),
-    index idx_createTime (creatTime),
-    index idx_appId_createTime (appId, creatTime)
+    index idx_createTime (createTime),
+    index idx_appId_createTime (appId, createTime)
 ) comment '对话历史表';

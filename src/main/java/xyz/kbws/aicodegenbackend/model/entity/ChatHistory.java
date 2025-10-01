@@ -62,8 +62,8 @@ public class ChatHistory implements Serializable {
     /**
      * 创建时间
      */
-    @Column("creatTime")
-    private LocalDateTime creatTime;
+    @Column("createTime")
+    private LocalDateTime createTime;
 
     /**
      * 更新时间

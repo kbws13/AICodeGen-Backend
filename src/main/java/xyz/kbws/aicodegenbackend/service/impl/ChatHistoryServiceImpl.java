@@ -133,7 +133,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         try {
             QueryWrapper queryWrapper = QueryWrapper.create()
                     .eq(ChatHistory::getAppId, appId)
-                    .orderBy(ChatHistory::getCreatTime, false)
+                    .orderBy(ChatHistory::getCreateTime, false)
                     .limit(1, maxCount);
             List<ChatHistory> historyList = this.list(queryWrapper);
             if (CollUtil.isEmpty(historyList)) {
