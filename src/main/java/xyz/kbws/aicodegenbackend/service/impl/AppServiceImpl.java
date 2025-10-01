@@ -9,8 +9,11 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import xyz.kbws.aicodegenbackend.ai.AiCodeGenTypeRoutingService;
+import xyz.kbws.aicodegenbackend.ai.AiCodeGenTypeRoutingServiceFactory;
 import xyz.kbws.aicodegenbackend.constant.AppConstant;
 import xyz.kbws.aicodegenbackend.core.AiCodeGeneratorFacade;
 import xyz.kbws.aicodegenbackend.core.builder.VueProjectBuilder;
@@ -29,6 +32,7 @@ import xyz.kbws.aicodegenbackend.model.vo.AppVO;
 import xyz.kbws.aicodegenbackend.model.vo.UserVO;
 import xyz.kbws.aicodegenbackend.service.AppService;
 import xyz.kbws.aicodegenbackend.service.ChatHistoryService;
+import xyz.kbws.aicodegenbackend.service.ScreenshotService;
 import xyz.kbws.aicodegenbackend.service.UserService;
 
 import java.io.File;
@@ -59,10 +63,19 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private ChatHistoryService chatHistoryService;
 
     @Resource
+    private ScreenshotService screenshotService;
+
+    @Resource
     private StreamHandlerExecutor streamHandlerExecutor;
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
+
+    @Value("${code.deploy-host:http://localhost}")
+    private String deployHost;
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
@@ -93,7 +106,24 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Override
     public Long createApp(AppAddDto appAddRequest, User loginUser) {
-        return 0L;
+        // 参数校验
+        String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtil.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
+        // 构造入库对象
+        App app = new App();
+        BeanUtil.copyProperties(appAddRequest, app);
+        app.setUserId(loginUser.getId());
+        // 应用名称暂时为 initPrompt 前 12 位
+        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 使用 AI 智能选择代码生成类型（多例模式）
+        AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
+        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        app.setCodeGenType(selectedCodeGenType.getValue());
+        // 插入数据库
+        boolean result = this.save(app);
+        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
+        return app.getId();
     }
 
     @Override
@@ -142,21 +172,33 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "部署失败：" + e.getMessage());
         }
-        // 8. 更新应用的 deployKey 和部署时间
+        // 9. 更新数据库
         App updateApp = new App();
         updateApp.setId(appId);
         updateApp.setDeployKey(deployKey);
         updateApp.setDeployedTime(LocalDateTime.now());
         boolean updateResult = this.updateById(updateApp);
         ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 9. 返回可访问的 URL
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 10. 构建应用访问 URL
+        String appDeployUrl = String.format("%s/%s/", deployHost, deployKey);        // 11. 异步生成截图并且更新应用封面
+        generateAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
     }
 
 
     @Override
     public void generateAppScreenshotAsync(Long appId, String appUrl) {
-
+// 使用虚拟线程并执行
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            // 更新数据库的封面
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
+        });
     }
 
     @Override

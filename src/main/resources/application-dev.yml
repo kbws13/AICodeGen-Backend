@@ -10,3 +10,7 @@ spring:
       port: 6379
       password:
       ttl: 3600
+
+# 部署路径
+code:
+  deploy-host: http://localhost/dist
