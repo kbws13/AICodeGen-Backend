@@ -6,7 +6,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Scope;
 
 /**
  * @author kbws
@@ -22,22 +22,27 @@ public class ReasoningStreamingChatModelConfig {
 
     private String apiKey;
 
+    private String modelName;
+
+    private Integer maxTokens;
+
+    private Double temperature;
+
+    private Boolean logRequests = false;
+
+    private Boolean logResponses = false;
+
     @Bean
-    @Primary
-    public StreamingChatModel reasonStreamingChatModel() {
-        // 为了方便测试临时修改
-        final String modelName = "deepseek-chat";
-        final int maxTokens = 8192;
-        // 生产环境使用
-        //final String modelName = "deepseek-reasoner";
-        //final int maxTokens = 32768;
+    @Scope("prototype")
+    public StreamingChatModel reasoningStreamingChatModelPrototype() {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .maxTokens(maxTokens)
-                .logRequests(true)
-                .logResponses(true)
+                .temperature(temperature)
+                .logRequests(logRequests)
+                .logResponses(logResponses)
                 .build();
     }
 }

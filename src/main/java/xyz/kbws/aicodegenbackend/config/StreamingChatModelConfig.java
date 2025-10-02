@@ -1,7 +1,7 @@
 package xyz.kbws.aicodegenbackend.config;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -9,12 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 /**
- * 智能路由模型配置
+ * 流式对话模型配置
  */
 @Configuration
-@ConfigurationProperties(prefix = "langchain4j.open-ai.routing-chat-model")
+@ConfigurationProperties(prefix = "langchain4j.open-ai.streaming-chat-model")
 @Data
-public class RoutingAiModelConfig {
+public class StreamingChatModelConfig {
 
     private String baseUrl;
 
@@ -26,20 +26,20 @@ public class RoutingAiModelConfig {
 
     private Double temperature;
 
-    private Boolean logRequests = false;
+    private boolean logRequests;
 
-    private Boolean logResponses = false;
+    private boolean logResponses;
 
     /**
-     * 创建用于路由判断的ChatModel
+     * 流式模型
      */
     @Bean
     @Scope("prototype")
-    public ChatModel routingChatModelPrototype() {
-        return OpenAiChatModel.builder()
+    public StreamingChatModel streamingChatModelPrototype() {
+        return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
-                .modelName(modelName)
                 .baseUrl(baseUrl)
+                .modelName(modelName)
                 .maxTokens(maxTokens)
                 .temperature(temperature)
                 .logRequests(logRequests)
